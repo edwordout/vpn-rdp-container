@@ -5,7 +5,7 @@ ARG RDP_USER
 ENV DEBIAN_FRONTEND=noninteractive
 ENV RDP_USER=${RDP_USER}
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     xrdp \
     xorgxrdp \
     xserver-xorg-legacy \
@@ -20,6 +20,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dbus-user-session \
     freerdp3-x11 \
     openconnect \
+    openssh-server \
+    nftables \
     sudo \
     iproute2 \
     iputils-ping \
@@ -66,6 +68,6 @@ RUN chmod +x /etc/xrdp/startwm.sh /entrypoint.sh \
     && chmod +x /usr/local/bin/primary-clipboard_bridge.sh \
     && printf '%s\n' 'allowed_users=anybody' 'needs_root_rights=no' > /etc/X11/Xwrapper.config
 
-EXPOSE 3389
+EXPOSE 3389 2022
 
 CMD ["/entrypoint.sh"]

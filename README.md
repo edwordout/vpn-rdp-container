@@ -6,7 +6,7 @@ A lightweight Debian stable-slim desktop container for a VPN-confined RDP workfl
 RDP client on host -> XRDP/JWM container -> OpenConnect VPN -> xfreerdp3
 ```
 
-The current setup is intentionally **rootful Podman + macvlan DHCP only**. The container attaches directly to the LAN through the `PARENT_IFACE` configured in `run-rdp-container.env`, gets its own DHCP lease, and is reached directly by an RDP client on port `3389`.
+The current setup is intentionally **rootful Podman + macvlan DHCP only**. The container attaches directly to the LAN through the `PARENT_IFACE` configured in `run-rdp-container.env`, gets its own DHCP lease, and is reached by either direct XRDP or an SSH tunnel, depending on `RDP_ACCESS_MODE`.
 
 The included VPN launcher uses OpenConnect. Set `VPN_PROTOCOL` in `user_home_volume/client.env` after first-run setup.
 
@@ -14,7 +14,7 @@ The included VPN launcher uses OpenConnect. Set `VPN_PROTOCOL` in `user_home_vol
 
 - Linux host with systemd
 - rootful Podman with netavark DHCP support
-- `iproute2` and `modprobe`
+- `iproute2`, `modprobe`, `ssh-keygen`, and an SSH client for tunnel mode
 - a physical LAN interface that can be used as the macvlan parent
 - an RDP client on the host or another LAN machine
 
@@ -42,11 +42,11 @@ The script automatically:
 - syncs the shareable `user_home_template/` template into ignored `user_home_volume/` and fixes `user_home_volume` ownership to UID/GID `1000:1000`
 - builds the image if needed
 - creates a macvlan DHCP network on the configured `PARENT_IFACE`
-- starts the container with the configured hostname, `/dev/net/tun`, `NET_ADMIN`, and a fixed MAC
+- starts the container with the configured hostname, `/dev/net/tun`, `NET_ADMIN`, a fixed MAC, and the selected access mode
 - restarts an already-running container after syncing the home template, so session scripts pick up changes
-- prints the MAC for router DHCP reservation and the DHCP address for your RDP client
+- prints the MAC for router DHCP reservation and mode-specific connection instructions
 
-Connect your RDP client to the printed target:
+The default access mode is `direct`. Connect your RDP client to the printed target:
 
 ```text
 <container-dhcp-ip>:3389
@@ -68,6 +68,35 @@ cd ~
 ./rdp.sh
 ```
 
+## Access modes
+
+`RDP_ACCESS_MODE=direct` is the default. XRDP listens on the container LAN IP, and the container firewall allows inbound `3389/tcp`.
+
+`RDP_ACCESS_MODE=ssh-tunnel` exposes only SSH on `SSH_PORT` (`2022` by default). XRDP listens on `127.0.0.1:3389` inside the container. On first run in tunnel mode, `run-rdp-container.sh` creates an Ed25519 client key under the sudo-invoking user's `~/.ssh` if needed, creates persistent container SSH host keys under ignored `ssh_host_keys/`, appends the restricted client public key to `user_home_volume/.ssh/authorized_keys` without duplicating it, and writes an ignored `./start_ssh_tunnel.sh` helper if it does not already exist.
+
+Tunnel mode connection flow:
+
+```bash
+./start_ssh_tunnel.sh
+# stop the background tunnel:
+./start_ssh_tunnel.sh --stop
+# keep it attached instead:
+./start_ssh_tunnel.sh --attach
+# or manually:
+ssh -i ~/.ssh/vpn-rdp-container_ed25519 -p 2022 -N -L 3389:127.0.0.1:3389 rdpuser@<container-dhcp-ip>
+```
+
+The helper starts the SSH tunnel in the background by default. Use `--stop` to stop it, or `--attach` / `SSH_TUNNEL_ATTACH=1` to keep it in the foreground.
+
+Then connect your RDP client to:
+
+```text
+localhost:3389
+```
+
+SSH password login is disabled in tunnel mode. The XRDP password remains the value configured by `RDP_PASSWORD`.
+
+If you used tunnel mode before persistent host keys were created, remove the old cached SSH host key once for the address you use to connect.
 
 ## Home template and runtime volume
 
@@ -118,7 +147,7 @@ sudo FIX_HOME_OWNERSHIP=0 ./run-rdp-container.sh
 ## Notes
 
 - The script prepares `/dev/net/tun` automatically when needed.
-- `macvlan` does not use host port publishing; use the container DHCP IP directly.
+- `macvlan` does not use host port publishing; use the container DHCP IP directly in direct mode, or as the SSH target in tunnel mode.
 - `CONTAINER_MAC` must be set in `run-rdp-container.env`; reserve that MAC on the router for a stable IP.
 - The host should not join the VPN route. OpenConnect runs inside the container network namespace.
 
@@ -134,7 +163,7 @@ sudo REBUILD=1 ./run-rdp-container.sh
 
 ### XRDP return route during VPN
 
-The container entrypoint runs a small root route guard. It watches active XRDP clients on port `3389` and pins a `/32` return route through the original macvlan LAN path before the VPN can steal replies via `tun0`. Rebuild after entrypoint changes:
+The container entrypoint runs a small root route guard. It watches the active LAN-facing ingress port (`3389` in direct mode, `SSH_PORT` in tunnel mode) and pins a `/32` return route through the original macvlan LAN path before the VPN can steal replies via `tun0`. Rebuild after entrypoint changes:
 
 ```bash
 sudo REBUILD=1 ./run-rdp-container.sh
