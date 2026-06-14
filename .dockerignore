@@ -1,0 +1,8 @@
+# Keep the build context small and never send copied VM-home secrets/logs to the builder.
+*
+!Dockerfile
+!Containerfile
+!entrypoint.sh
+!startwm.sh
+!apt-packages.txt
+!primary-clipboard_bridge.sh

@@ -1,0 +1,4 @@
+micro
+iputils-tracepath
+ffmpeg
+speedtest-cli

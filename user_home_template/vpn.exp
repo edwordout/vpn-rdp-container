@@ -1,0 +1,42 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+
+foreach required_var {USERNAME PASSWORD VPN_SERVER VPN_PROTOCOL} {
+    if {![info exists env($required_var)] || $env($required_var) eq ""} {
+        send_user "ERROR: environment variable $required_var is not set. Run through vpn.sh.\n"
+        exit 1
+    }
+    set $required_var $env($required_var)
+}
+
+spawn sudo -n /usr/sbin/openconnect \
+    --protocol=$VPN_PROTOCOL \
+    $VPN_SERVER \
+    --user=$USERNAME \
+    --no-dtls
+
+expect -re {[Pp]assword.*:}
+send "$PASSWORD\r"
+
+set timeout 5
+expect {
+    -re {GATEWAY: \[.*\]:} {
+        if {[info exists env(VPN_GATEWAY)] && $env(VPN_GATEWAY) ne ""} {
+            send "$env(VPN_GATEWAY)\r"
+        } else {
+            send_user "Gateway prompt received but VPN_GATEWAY is unset; accepting default.\n"
+            send "\r"
+        }
+    }
+    timeout {
+        send_user "No gateway prompt received; continuing.\n"
+    }
+    eof {
+        send_user "OpenConnect exited before gateway prompt.\n"
+        exit 1
+    }
+}
+set timeout -1
+
+interact

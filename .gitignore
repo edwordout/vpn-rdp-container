@@ -1,0 +1,7 @@
+user_home_volume/
+lab/
+
+*.env
+*.log
+*.mp3
+*.bak
