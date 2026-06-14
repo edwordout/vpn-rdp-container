@@ -10,6 +10,16 @@ The current setup is intentionally **rootful Podman + macvlan DHCP only**. The c
 
 The included VPN launcher uses OpenConnect. Set `VPN_PROTOCOL` in `user_home_volume/client.env` after first-run setup.
 
+## Requirements
+
+- Linux host with systemd
+- rootful Podman with netavark DHCP support
+- `iproute2` and `modprobe`
+- a physical LAN interface that can be used as the macvlan parent
+- an RDP client on the host or another LAN machine
+
+Docker and rootless Podman are not supported by this setup.
+
 ## First run
 
 Create/edit local credentials and network settings. `PARENT_IFACE` and `CONTAINER_MAC` are intentionally blank in the example; set them for your machine/LAN.
