@@ -44,6 +44,11 @@ rm -f /run/xrdp/*.pid /var/run/xrdp/*.pid || true
 
 sed -i "0,/^port=/s|^port=.*|port=$xrdp_port|" /etc/xrdp/xrdp.ini
 
+# Keep xorgxrdp logs out of the mounted user home.
+if grep -Eq '^param=-logfile$' /etc/xrdp/sesman.ini; then
+  sed -i '/^param=-logfile$/{n;s|^param=.*|param=/tmp/.xorgxrdp.%s.log|;}' /etc/xrdp/sesman.ini
+fi
+
 apply_container_firewall() {
   [ "$CONTAINER_FIREWALL" = 1 ] || return 0
   command -v nft >/dev/null 2>&1 || {

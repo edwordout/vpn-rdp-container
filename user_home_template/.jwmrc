@@ -8,7 +8,7 @@
     <Program label="Start internal RDP">xterm -geometry 120x35 -fa Monospace -fs 12 -fg '#DDDDDD' -bg '#111111' -e bash -lc 'cd "$HOME" || exit 1; ./rdp.sh; echo; echo "RDP exited. Press Enter to close."; read _'</Program>
     <Separator/>
     <Restart label="Restart JWM"/>
-    <Exit label="Log Out" confirm="true"/>
+    <Program label="Disconnect">xrdp-dis</Program>
   </RootMenu>
 
   <Tray x="0" y="-1" height="26">
