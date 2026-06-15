@@ -556,6 +556,7 @@ create_container() {
     --network "$NETWORK_NAME" \
     --mac-address "$CONTAINER_MAC" \
     --cap-add=NET_ADMIN \
+    --cap-add=NET_RAW \
     --device=/dev/net/tun \
     --env "RDP_USER=$RDP_USER" \
     --env "RDP_PASSWORD=$RDP_PASSWORD" \

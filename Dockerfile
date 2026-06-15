@@ -44,7 +44,9 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     ca-certificates \
     procps \
     passwd \
-    && rm -rf /var/lib/apt/lists/*
+    libcap2-bin \
+    && rm -rf /var/lib/apt/lists/* \
+    && setcap cap_net_raw+ep /usr/bin/ping
 
 COPY apt-packages.txt /tmp/apt-packages.txt
 
