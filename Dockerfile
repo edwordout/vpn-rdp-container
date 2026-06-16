@@ -1,9 +1,13 @@
 FROM debian:stable-slim
 
 ARG RDP_USER
+ARG CONTAINER_USER_UID=1000
+ARG CONTAINER_USER_GID=1000
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV RDP_USER=${RDP_USER}
+ENV CONTAINER_USER_UID=${CONTAINER_USER_UID}
+ENV CONTAINER_USER_GID=${CONTAINER_USER_GID}
 
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     xrdp \
@@ -55,8 +59,8 @@ RUN apt-get update \
       | xargs -r apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* /tmp/apt-packages.txt
 
-RUN groupadd -g 1000 "$RDP_USER" \
-    && useradd -m -u 1000 -g 1000 -s /bin/bash "$RDP_USER" \
+RUN groupadd -g "$CONTAINER_USER_GID" "$RDP_USER" \
+    && useradd -m -u "$CONTAINER_USER_UID" -g "$CONTAINER_USER_GID" -s /bin/bash "$RDP_USER" \
     && usermod -aG sudo "$RDP_USER" \
     && printf '%s ALL=(ALL) NOPASSWD: /usr/sbin/openconnect, /usr/sbin/ip, /usr/bin/ping\n' "$RDP_USER" > "/etc/sudoers.d/${RDP_USER}-vpn" \
     && chmod 0440 "/etc/sudoers.d/${RDP_USER}-vpn" \
