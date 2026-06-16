@@ -1,19 +1,48 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <JWM>
-  <StartupCommand>xterm -geometry 120x36 -fa Monospace -fs 12 -fg '#DDDDDD' -bg '#111111' -e bash -l</StartupCommand>
 
-  <RootMenu onroot="12">
-    <Program label="Terminal">xterm -geometry 120x36 -fa Monospace -fs 12 -fg '#DDDDDD' -bg '#111111' -e bash -l</Program>
-    <Program label="Start VPN">xterm -geometry 120x35 -fa Monospace -fs 12 -fg '#DDDDDD' -bg '#111111' -e bash -lc 'cd "$HOME" || exit 1; ./vpn.sh; echo; echo "VPN exited. Press Enter to close."; read _'</Program>
-    <Program label="Start internal RDP">xterm -geometry 120x35 -fa Monospace -fs 12 -fg '#DDDDDD' -bg '#111111' -e bash -lc 'cd "$HOME" || exit 1; ./rdp.sh; echo; echo "RDP exited. Press Enter to close."; read _'</Program>
+<!-- Global Window Styles -->
+  <Group>
+    <Class>.*</Class>
+    <Option>constrain</Option>
+    <Option>aerosnap</Option>
+    <Option>tiled</Option>
+  </Group>
+  <Group>
+    <Class>XTerm</Class>
+    <Option>iignore</Option>
+  </Group>
+
+<!-- TaskList Styles -->
+  <TrayStyle>
+    <List>desktop</List>
+  </TrayStyle>
+
+  <TaskListStyle decorations="motif" group="false" list="desktop"/>
+
+  <!-- Startup Command (Cleaned up via .Xresources profile) -->
+  <StartupCommand>xterm -e bash -l</StartupCommand>
+
+  <!-- Root Menu -->
+  <RootMenu onroot="3">
+    <Program label="Terminal">xterm -e bash -l</Program>
+    <Program label="Start VPN">xterm -geometry 120x35 -e bash -lc 'cd "$HOME" || exit 1; ./vpn.sh; echo; echo "VPN exited. Press Enter to close."; read _'</Program>
+    <Program label="Start internal RDP">xterm -geometry 120x35 -e bash -lc 'cd "$HOME" || exit 1; ./rdp.sh; echo; echo "RDP exited. Press Enter to close."; read _'</Program>
     <Separator/>
     <Restart label="Restart JWM"/>
     <Program label="Disconnect">xrdp-dis</Program>
   </RootMenu>
 
+  <!-- Tray Configuration -->
   <Tray x="0" y="-1" height="26">
-    <TrayButton label="Menu">root:1</TrayButton>
+    <TrayButton label="- # Menu -">root:3</TrayButton>
+    <TrayButton label=" | "></TrayButton>
+    <Spacer/>
     <TaskList maxwidth="256"/>
-    <Clock format="%H:%M"/>
+    <Spacer/>
+    <TrayButton label=" | "></TrayButton>
+    <Clock format="%I:%M %p %Y-%m-%d"></Clock>
+    <TrayButton label=" | "></TrayButton>
   </Tray>
+
 </JWM>

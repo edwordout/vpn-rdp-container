@@ -1,0 +1,5 @@
+XTerm*geometry: 120x36
+XTerm*faceName: Monospace
+XTerm*faceSize: 12
+XTerm*foreground: #DDDDDD
+XTerm*background: #111111
