@@ -37,11 +37,50 @@ print_summary() {
   echo "Mount path: $CLIENT_MOUNT"
 }
 
+image_env_value() {
+  local env_name="$1" env_lines
+  env_lines="$("$PODMAN" image inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$IMAGE_NAME" 2>/dev/null || true)"
+  printf '%s\n' "$env_lines" | awk -F= -v env_name="$env_name" '$1 == env_name {sub(/^[^=]*=/, ""); print; exit}'
+}
+
 build_image() {
+  local image_exists image_gid image_uid should_build
+  local -a build_cache_args=()
   image_rebuilt=0
-  if [ "$REBUILD" = 1 ] || ! podman_exists image "$IMAGE_NAME"; then
+  image_exists=0
+  should_build=0
+
+  if podman_exists image "$IMAGE_NAME"; then
+    image_exists=1
+    image_uid="$(image_env_value CONTAINER_USER_UID)"
+    image_gid="$(image_env_value CONTAINER_USER_GID)"
+  fi
+
+  if [ "$REBUILD" = 1 ]; then
     echo "Building image..."
+    should_build=1
+    if [ "$image_exists" = 1 ] \
+      && { [ -z "$image_uid" ] || [ -z "$image_gid" ] \
+        || [ "$image_uid" != "$CONTAINER_USER_UID" ] \
+        || [ "$image_gid" != "$CONTAINER_USER_GID" ]; }; then
+      build_cache_args+=(--no-cache)
+    fi
+  elif [ "$image_exists" != 1 ]; then
+    echo "Building image..."
+    should_build=1
+  elif [ -z "$image_uid" ] || [ -z "$image_gid" ] \
+    || [ "$image_uid" != "$CONTAINER_USER_UID" ] \
+    || [ "$image_gid" != "$CONTAINER_USER_GID" ]; then
+    echo "Existing image user IDs differ; rebuilding for CONTAINER_USER_UID=$CONTAINER_USER_UID CONTAINER_USER_GID=$CONTAINER_USER_GID..."
+    build_cache_args+=(--no-cache)
+    should_build=1
+  else
+    echo "Image already exists. Set REBUILD=1 to rebuild."
+  fi
+
+  if [ "$should_build" = 1 ]; then
     "$PODMAN" build \
+      "${build_cache_args[@]}" \
       --network host \
       --build-arg "RDP_USER=$RDP_USER" \
       --build-arg "CONTAINER_USER_UID=$CONTAINER_USER_UID" \
@@ -50,8 +89,6 @@ build_image() {
       -f "$BUILD_FILE" \
       "$BUILD_CONTEXT"
     image_rebuilt=1
-  else
-    echo "Image already exists. Set REBUILD=1 to rebuild."
   fi
 }
 

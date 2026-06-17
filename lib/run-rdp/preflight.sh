@@ -40,6 +40,10 @@ validate_config() {
 
   : "${NETWORK_NAME:=${APP_NAME}_macvlan_dhcp_${PARENT_IFACE}}"
   : "${CLIENT_MOUNT:=/home/${RDP_USER}}"
+  if [ "$CLIENT_MOUNT" = "/home/${RDP_USER}" ] \
+    && { [ "$CONTAINER_USER_UID" != "$HOST_UID" ] || [ "$CONTAINER_USER_GID" != "$HOST_GID" ]; }; then
+    fail "CONTAINER_USER_UID/CONTAINER_USER_GID must match host user $HOST_USER ($HOST_UID:$HOST_GID) when CLIENT_MOUNT is /home/$RDP_USER; rebuild with matching IDs or set CLIENT_MOUNT to a non-home path."
+  fi
 }
 
 check_host_prerequisites() {

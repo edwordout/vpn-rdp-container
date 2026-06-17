@@ -2,7 +2,9 @@
 *
 !Dockerfile
 !Containerfile
-!entrypoint.sh
-!startwm.sh
 !apt-packages.txt
-!primary-clipboard_bridge.sh
+!guest/
+!guest/scripts/
+!guest/scripts/entrypoint.sh
+!guest/scripts/startwm.sh
+!guest/scripts/primary-clipboard_bridge.sh

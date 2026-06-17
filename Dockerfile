@@ -66,9 +66,9 @@ RUN groupadd -g "$CONTAINER_USER_GID" "$RDP_USER" \
     && chmod 0440 "/etc/sudoers.d/${RDP_USER}-vpn" \
     && (adduser xrdp ssl-cert || true)
 
-COPY startwm.sh /etc/xrdp/startwm.sh
-COPY entrypoint.sh /entrypoint.sh
-COPY primary-clipboard_bridge.sh /usr/local/bin/primary-clipboard_bridge.sh
+COPY guest/scripts/startwm.sh /etc/xrdp/startwm.sh
+COPY guest/scripts/entrypoint.sh /entrypoint.sh
+COPY guest/scripts/primary-clipboard_bridge.sh /usr/local/bin/primary-clipboard_bridge.sh
 
 RUN chmod +x /etc/xrdp/startwm.sh /entrypoint.sh \
     && chmod +x /usr/local/bin/primary-clipboard_bridge.sh \

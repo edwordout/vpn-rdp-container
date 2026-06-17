@@ -39,7 +39,7 @@ sudo ./run-rdp-container.sh
 The script automatically:
 
 - enables `netavark-dhcp-proxy.socket`
-- syncs the shareable `user_home_template/` template into ignored `user_home_volume/` and fixes `user_home_volume` ownership to UID/GID `1000:1000`
+- syncs the shareable `user_home_template/` template into ignored `user_home_volume/` and aligns the mounted home owner with the sudo-invoking host user's UID/GID
 - builds the image if needed
 - creates a macvlan DHCP network on the configured `PARENT_IFACE`
 - starts the container with the configured hostname, `/dev/net/tun`, `NET_ADMIN`, a fixed MAC, and the selected access mode
@@ -108,6 +108,10 @@ If you used tunnel mode before persistent host keys were created, remove the old
 
 `user_home_volume/` is ignored by git and is the directory actually mounted as `/home/${RDP_USER}`. `run-rdp-container.sh` creates it on first run. Each run refreshes template-managed files without deleting local runtime files such as `client.env`, logs, or app state.
 
+The template is copied into `user_home_volume/`; `user_home_template/` itself is not mounted into the container. The image builds the container user with the sudo-invoking host user's numeric UID/GID by default, so the host account and the container RDP user are the same owner for the shared home.
+
+For the default `/home/${RDP_USER}` mount, explicit `CONTAINER_USER_UID` / `CONTAINER_USER_GID` overrides must match the host user's UID/GID. Mismatched values fail before the container starts because strict home and SSH permissions cannot be shared safely across different numeric owners. Use a non-home `CLIENT_MOUNT` only when host access to the mounted home is intentionally not required.
+
 Create container-side client credentials in the runtime volume. If you do this before the first run, create the directory first:
 
 ```bash
@@ -140,7 +144,8 @@ sudo RECREATE=1 ./run-rdp-container.sh
 # Change PARENT_IFACE or CONTAINER_MAC in run-rdp-container.env, then recreate.
 sudo RECREATE=1 ./run-rdp-container.sh
 
-# Disable automatic chown of user_home_volume.
+# Disable automatic ownership repair only when user_home_volume is already owned by the container UID/GID.
+# This does not bypass the UID/GID match requirement for the default /home/${RDP_USER} mount.
 sudo FIX_HOME_OWNERSHIP=0 ./run-rdp-container.sh
 ```
 
@@ -163,7 +168,7 @@ sudo REBUILD=1 ./run-rdp-container.sh
 
 ### XRDP return route during VPN
 
-The container entrypoint runs a small root route guard. It watches the active LAN-facing ingress port (`3389` in direct mode, `SSH_PORT` in tunnel mode) and pins a `/32` return route through the original macvlan LAN path before the VPN can steal replies via `tun0`. Rebuild after entrypoint changes:
+The container entrypoint runs a small root route guard. It watches the active LAN-facing ingress port (`3389` in direct mode, `SSH_PORT` in tunnel mode) and pins a `/32` return route through the original macvlan LAN path before the VPN can steal replies via `tun0`. Rebuild after `guest/scripts/entrypoint.sh` changes:
 
 ```bash
 sudo REBUILD=1 ./run-rdp-container.sh
@@ -172,7 +177,7 @@ sudo REBUILD=1 ./run-rdp-container.sh
 
 ### Audio over XRDP
 
-The image uses PipeWire for XRDP audio redirection and explicitly loads the XRDP PipeWire module from `startwm.sh` and installs `pipewire-module-xrdp`, `pipewire-pulse`, `wireplumber`, `pavucontrol`, `alsa-utils`, `pipewire-alsa`, `libasound2-plugins`, `xclip`, `xsel`, and `pulseaudio-utils`. The XRDP session starts PipeWire in `startwm.sh`.
+The image uses PipeWire for XRDP audio redirection and explicitly loads the XRDP PipeWire module from `guest/scripts/startwm.sh` and installs `pipewire-module-xrdp`, `pipewire-pulse`, `wireplumber`, `pavucontrol`, `alsa-utils`, `pipewire-alsa`, `libasound2-plugins`, `xclip`, `xsel`, and `pulseaudio-utils`. The XRDP session starts PipeWire through that startwm script.
 
 After reconnecting KRDC, test inside the container desktop:
 
@@ -220,7 +225,7 @@ xfreerdp3 /v:<container-ip>:3389 /u:rdpuser /cert:ignore +clipboard /sound:sys:p
 
 ### Terminal selection clipboard bridge
 
-The image autostarts `primary-clipboard_bridge.sh` in each XRDP session. It stops older bridge helpers for the same user, then mirrors X11 `PRIMARY` and `CLIPBOARD` both ways, so terminal selection reaches the host clipboard and host-copied text is also available to terminal PRIMARY paste bindings such as `Ctrl+Ins`. Log output goes to `/tmp/primary-clipboard-bridge.log`.
+The image autostarts `guest/scripts/primary-clipboard_bridge.sh` in each XRDP session. It stops older bridge helpers for the same user, then mirrors X11 `PRIMARY` and `CLIPBOARD` both ways, so terminal selection reaches the host clipboard and host-copied text is also available to terminal PRIMARY paste bindings such as `Ctrl+Ins`. Log output goes to `/tmp/primary-clipboard-bridge.log`.
 
 ## License
 
