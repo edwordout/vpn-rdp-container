@@ -20,7 +20,7 @@ sync_user_home_template() {
     --exclude='./*.log' \
     --exclude='./*.mp3' \
     --exclude='./*.bak' \
-    -cf - . | tar -C "$CLIENT_DIR" -xf -
+    -cf - . | tar -C "$CLIENT_DIR" --skip-old-files -xf -
 }
 
 prepare_volume_args() {
