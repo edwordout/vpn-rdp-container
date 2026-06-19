@@ -102,7 +102,7 @@ write_ssh_config_entry() {
 
   if ! grep -Fxq "$include_line" "$root_config"; then
     {
-      printf '\n'
+      printf '\n\n'
       printf '%s\n' "$include_line"
     } >> "$root_config"
   fi

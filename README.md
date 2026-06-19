@@ -78,14 +78,14 @@ Tunnel mode connection flow:
 
 ```bash
 ssh -fN vpn-rdp-container
-# stop the background tunnel:
-ssh -O exit vpn-rdp-container
 ```
 
-Then connect your RDP client to:
+Then connect your RDP client to `localhost:3389`.
 
-```text
-localhost:3389
+When finished, stop the background tunnel:
+
+```bash
+ssh -O exit vpn-rdp-container
 ```
 
 SSH password login is disabled in tunnel mode. The XRDP password remains the value configured by `RDP_PASSWORD`.
