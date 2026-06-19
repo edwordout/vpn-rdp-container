@@ -5,6 +5,8 @@ ARG CONTAINER_USER_UID=1000
 ARG CONTAINER_USER_GID=1000
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=C.UTF-8
+ENV LC_CTYPE=C.UTF-8
 ENV RDP_USER=${RDP_USER}
 ENV CONTAINER_USER_UID=${CONTAINER_USER_UID}
 ENV CONTAINER_USER_GID=${CONTAINER_USER_GID}
@@ -51,6 +53,9 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     libcap2-bin \
     && rm -rf /var/lib/apt/lists/* \
     && setcap cap_net_raw+ep /usr/bin/ping
+
+# Keep SSH, xrdp, and login shells on Debian's built-in UTF-8 locale.
+RUN printf '%s\n' 'LANG=C.UTF-8' 'LC_CTYPE=C.UTF-8' > /etc/default/locale
 
 COPY apt-packages.txt /tmp/apt-packages.txt
 
