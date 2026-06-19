@@ -8,7 +8,7 @@ print_target() {
     if [ "$RDP_ACCESS_MODE" = ssh-tunnel ]; then
       write_ssh_config_entry "$ip_addr"
       echo "Start SSH tunnel, then connect RDP client to localhost:3389:"
-      echo "  ssh -fN vpn-rdp-container"
+      echo "  ssh -f vpn-rdp-container"
       echo "When finished, stop the SSH tunnel:"
       echo "  ssh -O exit vpn-rdp-container"
     else

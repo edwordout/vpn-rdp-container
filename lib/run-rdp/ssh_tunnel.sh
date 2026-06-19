@@ -117,6 +117,7 @@ Host vpn-rdp-container
   IdentitiesOnly yes
   LocalForward 127.0.0.1:3389 127.0.0.1:3389
   ExitOnForwardFailure yes
+  SessionType none
   ServerAliveInterval 30
   ServerAliveCountMax 3
   ControlMaster auto
