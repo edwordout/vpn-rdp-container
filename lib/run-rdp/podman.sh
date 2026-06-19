@@ -6,11 +6,11 @@ print_target() {
   [ -n "$mac_addr" ] && echo "Router DHCP reservation MAC: $mac_addr"
   if [ -n "$ip_addr" ]; then
     if [ "$RDP_ACCESS_MODE" = ssh-tunnel ]; then
-      write_ssh_tunnel_helper "$ip_addr"
+      write_ssh_config_entry "$ip_addr"
       echo "Open SSH tunnel:"
-      echo "  ssh -i \"$SSH_KEY_FILE\" -p \"$SSH_PORT\" -N -L 3389:127.0.0.1:3389 \"$RDP_USER@$ip_addr\""
-      echo "Or run:"
-      echo "  ./start_ssh_tunnel.sh"
+      echo "  ssh -fN vpn-rdp-container"
+      echo "Stop SSH tunnel:"
+      echo "  ssh -O exit vpn-rdp-container"
       echo "Then connect RDP client to: localhost:3389"
     else
       echo "Connect RDP client to: ${ip_addr}:3389"

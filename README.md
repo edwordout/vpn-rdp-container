@@ -72,21 +72,15 @@ cd ~
 
 `RDP_ACCESS_MODE=direct` is the default. XRDP listens on the container LAN IP, and the container firewall allows inbound `3389/tcp`.
 
-`RDP_ACCESS_MODE=ssh-tunnel` exposes only SSH on `SSH_PORT` (`2022` by default). XRDP listens on `127.0.0.1:3389` inside the container. On first run in tunnel mode, `run-rdp-container.sh` creates an Ed25519 client key under the sudo-invoking user's `~/.ssh` if needed, creates persistent container SSH host keys under ignored `ssh_host_keys/`, appends the restricted client public key to `user_home_volume/.ssh/authorized_keys` without duplicating it, and writes an ignored `./start_ssh_tunnel.sh` helper if it does not already exist.
+`RDP_ACCESS_MODE=ssh-tunnel` exposes only SSH on `SSH_PORT` (`2022` by default). XRDP listens on `127.0.0.1:3389` inside the container. On each run in tunnel mode, `run-rdp-container.sh` creates an Ed25519 client key under the sudo-invoking user's `~/.ssh` if needed, creates persistent container SSH host keys under ignored `ssh_host_keys/`, appends the restricted client public key to `user_home_volume/.ssh/authorized_keys` without duplicating it, creates/updates a managed SSH config entry at `~/.ssh/config.d/vpn-rdp-container`, and ensures `~/.ssh/config` includes `~/.ssh/config.d/*`. Re-run the script after the container DHCP IP changes; the managed `HostName` is overwritten with the current address.
 
 Tunnel mode connection flow:
 
 ```bash
-./start_ssh_tunnel.sh
+ssh -fN vpn-rdp-container
 # stop the background tunnel:
-./start_ssh_tunnel.sh --stop
-# keep it attached instead:
-./start_ssh_tunnel.sh --attach
-# or manually:
-ssh -i ~/.ssh/vpn-rdp-container_ed25519 -p 2022 -N -L 3389:127.0.0.1:3389 rdpuser@<container-dhcp-ip>
+ssh -O exit vpn-rdp-container
 ```
-
-The helper starts the SSH tunnel in the background by default. Use `--stop` to stop it, or `--attach` / `SSH_TUNNEL_ATTACH=1` to keep it in the foreground.
 
 Then connect your RDP client to:
 

@@ -15,11 +15,6 @@ sync_user_home_template() {
     chmod -R u+rwX "$CLIENT_DIR"
   fi
   tar -C "$USER_HOME_TEMPLATE_DIR" \
-    --exclude='./client.env' \
-    --exclude='./.config/pulse' \
-    --exclude='./*.log' \
-    --exclude='./*.mp3' \
-    --exclude='./*.bak' \
     -cf - . | tar -C "$CLIENT_DIR" --skip-old-files -xf -
 }
 

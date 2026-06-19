@@ -1,6 +1,5 @@
 user_home_volume/
 lab/
-start_ssh_tunnel.sh
 ssh_host_keys/
 
 *.env
