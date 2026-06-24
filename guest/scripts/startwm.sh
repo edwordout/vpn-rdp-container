@@ -24,7 +24,9 @@ exec dbus-run-session -- sh -lc '
   fi
 
 
-  /usr/local/bin/primary-clipboard_bridge.sh >/tmp/primary-clipboard-bridge.log 2>&1 &
+  bridge_display="${DISPLAY:-unset}"
+  bridge_log_display="$(printf '%s' "$bridge_display" | tr -c 'A-Za-z0-9_.-' '_')"
+  XRDP_SESSION_PID="$$" /usr/local/bin/primary-clipboard-bridge >>"/tmp/primary-clipboard-bridge.$(id -u).${bridge_log_display}.log" 2>&1 &
 
   [ -r "$HOME/.Xresources" ] && command -v xrdb >/dev/null 2>&1 && xrdb -merge "$HOME/.Xresources" || true
   exec jwm

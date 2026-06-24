@@ -73,10 +73,10 @@ RUN groupadd -g "$CONTAINER_USER_GID" "$RDP_USER" \
 
 COPY guest/scripts/startwm.sh /etc/xrdp/startwm.sh
 COPY guest/scripts/entrypoint.sh /entrypoint.sh
-COPY guest/scripts/primary-clipboard_bridge.sh /usr/local/bin/primary-clipboard_bridge.sh
+COPY guest/scripts/primary_clipboard_bridge.py /usr/local/bin/primary-clipboard-bridge
 
 RUN chmod +x /etc/xrdp/startwm.sh /entrypoint.sh \
-    && chmod +x /usr/local/bin/primary-clipboard_bridge.sh \
+    && chmod +x /usr/local/bin/primary-clipboard-bridge \
     && printf '%s\n' 'allowed_users=anybody' 'needs_root_rights=no' > /etc/X11/Xwrapper.config
 
 EXPOSE 3389 2022

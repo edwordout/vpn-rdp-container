@@ -219,7 +219,7 @@ xfreerdp3 /v:<container-ip>:3389 /u:rdpuser /cert:ignore +clipboard /sound:sys:p
 
 ### Terminal selection clipboard bridge
 
-The image autostarts `guest/scripts/primary-clipboard_bridge.sh` in each XRDP session. It stops older bridge helpers for the same user, then mirrors X11 `PRIMARY` and `CLIPBOARD` both ways, so terminal selection reaches the host clipboard and host-copied text is also available to terminal PRIMARY paste bindings such as `Ctrl+Ins`. Log output goes to `/tmp/primary-clipboard-bridge.log`.
+The image autostarts `guest/scripts/primary_clipboard_bridge.py` as `/usr/local/bin/primary-clipboard-bridge` in each XRDP session. It mirrors X11 `PRIMARY` and `CLIPBOARD` both ways, so terminal selection reaches the host clipboard and host-copied text is also available to terminal PRIMARY paste bindings such as `Ctrl+Ins`. The bridge allows one helper per normalized active `$DISPLAY` using a lock under `$XDG_RUNTIME_DIR` or `/tmp`, exits when the XRDP session parent exits, and logs to `/tmp/primary-clipboard-bridge.<uid>.<sanitized-display>.log`.
 
 ## License
 

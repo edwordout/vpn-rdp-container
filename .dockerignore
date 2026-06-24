@@ -7,4 +7,4 @@
 !guest/scripts/
 !guest/scripts/entrypoint.sh
 !guest/scripts/startwm.sh
-!guest/scripts/primary-clipboard_bridge.sh
+!guest/scripts/primary_clipboard_bridge.py
