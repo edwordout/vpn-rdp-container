@@ -173,6 +173,12 @@ sudo REBUILD=1 ./run-rdp-container.sh
 
 The image uses PipeWire for XRDP audio redirection and explicitly loads the XRDP PipeWire module from `guest/scripts/startwm.sh` and installs `pipewire-module-xrdp`, `pipewire-pulse`, `wireplumber`, `pavucontrol`, `alsa-utils`, `pipewire-alsa`, `libasound2-plugins`, `xclip`, `xsel`, and `pulseaudio-utils`. The XRDP session starts PipeWire through that startwm script.
 
+The image also installs a lightweight RDP audio profile under `/etc/pipewire/`:
+
+- graph rate fixed to `44100`
+- default quantum `2048`
+- Pulse clients prefer/fixate `S16LE` stereo at `44100`
+
 After reconnecting KRDC, test inside the container desktop:
 
 ```bash

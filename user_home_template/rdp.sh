@@ -65,7 +65,7 @@ ensure_pulse_source() {
   [ -n "$RDP_MIC_SOURCE" ] || return 0
 
   if ! pulse_source_exists "$RDP_MIC_SOURCE" && [ "$RDP_MIC_SOURCE" = silence_null.monitor ]; then
-    pactl load-module module-null-sink sink_name=silence_null sink_properties=device.description=Silence >/dev/null
+    pactl load-module module-null-sink sink_name=silence_null format=s16le rate=44100 channels=2 sink_properties=device.description=Silence >/dev/null
   fi
 
   if ! pulse_source_exists "$RDP_MIC_SOURCE"; then

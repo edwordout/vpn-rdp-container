@@ -69,11 +69,14 @@ RUN groupadd -g "$CONTAINER_USER_GID" "$RDP_USER" \
     && usermod -aG sudo "$RDP_USER" \
     && printf '%s ALL=(ALL) NOPASSWD: /usr/sbin/openconnect, /usr/sbin/ip, /usr/bin/ping\n' "$RDP_USER" > "/etc/sudoers.d/${RDP_USER}-vpn" \
     && chmod 0440 "/etc/sudoers.d/${RDP_USER}-vpn" \
-    && (adduser xrdp ssl-cert || true)
+    && (adduser xrdp ssl-cert || true) \
+    && mkdir -p /etc/pipewire/pipewire.conf.d /etc/pipewire/pipewire-pulse.conf.d
 
 COPY guest/scripts/startwm.sh /etc/xrdp/startwm.sh
 COPY guest/scripts/entrypoint.sh /entrypoint.sh
 COPY guest/scripts/primary_clipboard_bridge.py /usr/local/bin/primary-clipboard-bridge
+COPY guest/pipewire/10-rdp-light.conf /etc/pipewire/pipewire.conf.d/10-rdp-light.conf
+COPY guest/pipewire/10-rdp-light-pulse.conf /etc/pipewire/pipewire-pulse.conf.d/10-rdp-light-pulse.conf
 
 RUN chmod +x /etc/xrdp/startwm.sh /entrypoint.sh \
     && chmod +x /usr/local/bin/primary-clipboard-bridge \
