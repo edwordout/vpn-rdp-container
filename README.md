@@ -2,6 +2,21 @@
 
 A lightweight Debian stable-slim desktop container for a VPN-confined RDP workflow.
 
+## Why use this?
+
+If your workday starts with "connect to the VPN, then RDP into the real workstation", this project turns that whole chain into a contained, repeatable appliance. Instead of letting a corporate VPN rewrite routes, DNS, and network policy on your main Linux desktop, you RDP into a small Debian container, start OpenConnect there, and launch the inner RDP session from inside the container.
+
+That gives you a clear operational boundary:
+
+- **Your host stays yours.** The VPN runs inside the container network namespace, so your normal browser, terminals, LAN access, and internet routing stay outside the VPN.
+- **The work session stays together.** VPN credentials, RDP launch scripts, desktop state, logs, clipboard helpers, and optional client tools live in the mounted container home, not scattered across the host.
+- **The network shape is predictable.** The container gets its own DHCP lease on your LAN through macvlan, making it feel like a tiny dedicated workstation rather than a pile of forwarded ports.
+- **Access can be as open or tight as you need.** Use direct XRDP on the container LAN IP for a simple trusted-LAN setup, or SSH tunnel mode when you only want SSH exposed.
+- **It is built for the annoying real-world details.** The setup handles `/dev/net/tun`, rootful Podman networking, persistent SSH host keys, UID/GID alignment for the mounted home, XRDP startup, audio redirection, clipboard bridging, and return routing while the VPN is active.
+- **It remains easy to rebuild.** The committed template contains the shareable desktop scripts and defaults; local secrets and runtime state stay in ignored files and volumes.
+
+The goal is not to be a general-purpose VDI platform. It is a pragmatic, single-user remote-work wrapper: one command starts a LAN-visible desktop container, one RDP connection gets you into it, one VPN launcher joins the protected network, and one inner RDP launcher connects to the workspace you actually need.
+
 ```text
 RDP client on host -> XRDP/JWM container -> OpenConnect VPN -> xfreerdp3
 ```
