@@ -57,12 +57,29 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
 # Keep SSH, xrdp, and login shells on Debian's built-in UTF-8 locale.
 RUN printf '%s\n' 'LANG=C.UTF-8' 'LC_CTYPE=C.UTF-8' > /etc/default/locale
 
+# Extra packages
 COPY apt-packages.txt /tmp/apt-packages.txt
 
 RUN apt-get update \
     && sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' /tmp/apt-packages.txt \
       | xargs -r apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* /tmp/apt-packages.txt
+
+# Amazon WorkSpaces Client (Ubuntu 24.04 package - DCV only)
+RUN cd /tmp \
+    && curl -fsSL \
+        https://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu74_74.2-1ubuntu3.1_amd64.deb \
+        -o libicu74.deb \
+    && curl -fsSL \
+        https://d3nt0h4h6pmmc4.cloudfront.net/new_workspacesclient_noble_amd64.deb \
+        -o workspacesclient.deb \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ./libicu74.deb \
+        ./workspacesclient.deb \
+    && rm -f /tmp/libicu74.deb /tmp/workspacesclient.deb \
+    && rm -rf /var/lib/apt/lists/*
+
 
 RUN groupadd -g "$CONTAINER_USER_GID" "$RDP_USER" \
     && useradd -m -u "$CONTAINER_USER_UID" -g "$CONTAINER_USER_GID" -s /bin/bash "$RDP_USER" \

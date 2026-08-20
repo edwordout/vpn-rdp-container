@@ -29,6 +29,7 @@ print_summary() {
   echo "MAC:        $CONTAINER_MAC"
   echo "Access:     $RDP_ACCESS_MODE"
   echo "Firewall:   $CONTAINER_FIREWALL"
+  echo "Timezone:   $TZ"
   [ "$RDP_ACCESS_MODE" = ssh-tunnel ] && echo "SSH port:   $SSH_PORT"
   [ "$RDP_ACCESS_MODE" = ssh-tunnel ] && echo "SSH hosts:  $SSH_HOST_KEYS_DIR"
   echo "Home tpl:   ${USER_HOME_TEMPLATE_DIR:-none}"
@@ -120,6 +121,7 @@ create_container() {
     --env "RDP_ACCESS_MODE=$RDP_ACCESS_MODE" \
     --env "CONTAINER_FIREWALL=$CONTAINER_FIREWALL" \
     --env "SSH_PORT=$SSH_PORT" \
+    --env "TZ=$TZ" \
     "${volume_args[@]}" \
     "$IMAGE_NAME"
   print_target
@@ -146,6 +148,7 @@ reconcile_container() {
     mark_recreate_if_env_changed RDP_ACCESS_MODE
     mark_recreate_if_env_changed CONTAINER_FIREWALL
     mark_recreate_if_env_changed SSH_PORT
+    mark_recreate_if_env_changed TZ
 
     if [ "$RDP_ACCESS_MODE" = ssh-tunnel ] && ! container_has_mount_destination /etc/ssh/host_keys; then
       echo "Existing container is missing persistent SSH host keys mount; recreating..."

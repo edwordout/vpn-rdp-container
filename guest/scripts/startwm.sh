@@ -4,6 +4,7 @@ unset XDG_RUNTIME_DIR
 
 exec dbus-run-session -- sh -lc '
   export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+  export TZ="${TZ:-$(cat /etc/timezone 2>/dev/null || printf America/New_York)}"
   mkdir -p "$XDG_RUNTIME_DIR"
   chmod 700 "$XDG_RUNTIME_DIR"
 

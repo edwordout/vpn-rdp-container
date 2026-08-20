@@ -76,6 +76,7 @@ apply_defaults() {
   : "${PODMAN:=podman}"
   : "${REBUILD:=0}"
   : "${RECREATE:=0}"
+  : "${TZ:=America/New_York}"
 
   # Networking
   : "${PARENT_IFACE:=}"

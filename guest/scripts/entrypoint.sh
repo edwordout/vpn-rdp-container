@@ -7,7 +7,30 @@ set -eu
 RDP_ACCESS_MODE="${RDP_ACCESS_MODE:-direct}"
 CONTAINER_FIREWALL="${CONTAINER_FIREWALL:-1}"
 SSH_PORT="${SSH_PORT:-2022}"
+TZ="${TZ:-America/New_York}"
 SSH_HOST_KEYS_DIR="/etc/ssh/host_keys"
+
+apply_timezone() {
+  case "$TZ" in
+    /*|*..*|*[!A-Za-z0-9_+./-]*)
+      echo "Error: invalid TZ value: $TZ" >&2
+      exit 1
+      ;;
+  esac
+
+  zoneinfo="/usr/share/zoneinfo/$TZ"
+  if [ ! -f "$zoneinfo" ]; then
+    echo "Error: timezone not found: $TZ" >&2
+    exit 1
+  fi
+
+  ln -snf "$zoneinfo" /etc/localtime
+  printf '%s\n' "$TZ" > /etc/timezone
+
+  touch /etc/environment
+  sed -i '/^TZ=/d' /etc/environment
+  printf 'TZ=%s\n' "$TZ" >> /etc/environment
+}
 
 case "$RDP_ACCESS_MODE" in
   direct)
@@ -152,6 +175,7 @@ start_rdp_return_route_guard() {
   ) &
 }
 
+apply_timezone
 apply_container_firewall
 start_sshd
 start_rdp_return_route_guard

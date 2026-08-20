@@ -73,6 +73,7 @@ Login:
 user: configured by RDP_USER in run-rdp-container.env
 pass: configured by RDP_PASSWORD in run-rdp-container.env
 hostname: configured by CONTAINER_HOSTNAME in run-rdp-container.env
+timezone: America/New_York by default; override TZ in run-rdp-container.env
 ```
 
 Inside the desktop:
