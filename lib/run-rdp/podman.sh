@@ -7,9 +7,17 @@ print_target() {
   if [ -n "$ip_addr" ]; then
     if [ "$RDP_ACCESS_MODE" = ssh-tunnel ]; then
       write_ssh_config_entry "$ip_addr"
-      echo "Start SSH tunnel, then connect RDP client to localhost:3389:"
-      echo "  ssh -f vpn-rdp-container"
-      echo "When finished, stop the SSH tunnel:"
+      if [ "$RDP_SPLIT_AUDIO" = 1 ]; then
+        echo "RustConn: use Connect All on the group containing the RDP and audio companion entries."
+        echo "CLI: start the SSH tunnel, connect RDP to localhost:3389, then start split audio:"
+        echo "  ssh -f vpn-rdp-container"
+        echo "  ./run-rdp-audio.sh"
+        echo "Press Ctrl-C in the audio terminal before stopping the CLI tunnel:"
+      else
+        echo "Start the SSH tunnel, then connect RDP to localhost:3389:"
+        echo "  ssh -f vpn-rdp-container"
+        echo "When finished, stop the SSH tunnel:"
+      fi
       echo "  ssh -O exit vpn-rdp-container"
     else
       echo "Connect RDP client to: ${ip_addr}:3389"
@@ -32,6 +40,7 @@ print_summary() {
   echo "Timezone:   $TZ"
   [ "$RDP_ACCESS_MODE" = ssh-tunnel ] && echo "SSH port:   $SSH_PORT"
   [ "$RDP_ACCESS_MODE" = ssh-tunnel ] && echo "SSH hosts:  $SSH_HOST_KEYS_DIR"
+  [ "$RDP_ACCESS_MODE" = ssh-tunnel ] && echo "Split audio: $RDP_SPLIT_AUDIO"
   echo "Home tpl:   ${USER_HOME_TEMPLATE_DIR:-none}"
   echo "Home volume:${CLIENT_DIR:-none}"
   echo "Mount path: $CLIENT_MOUNT"

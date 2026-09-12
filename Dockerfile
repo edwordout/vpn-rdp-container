@@ -92,11 +92,12 @@ RUN groupadd -g "$CONTAINER_USER_GID" "$RDP_USER" \
 COPY guest/scripts/startwm.sh /etc/xrdp/startwm.sh
 COPY guest/scripts/entrypoint.sh /entrypoint.sh
 COPY guest/scripts/primary_clipboard_bridge.py /usr/local/bin/primary-clipboard-bridge
+COPY guest/scripts/rdp_audio.sh /usr/local/bin/vpn-rdp-audio
 COPY guest/pipewire/10-rdp-light.conf /etc/pipewire/pipewire.conf.d/10-rdp-light.conf
 COPY guest/pipewire/10-rdp-light-pulse.conf /etc/pipewire/pipewire-pulse.conf.d/10-rdp-light-pulse.conf
 
 RUN chmod +x /etc/xrdp/startwm.sh /entrypoint.sh \
-    && chmod +x /usr/local/bin/primary-clipboard-bridge \
+    && chmod +x /usr/local/bin/primary-clipboard-bridge /usr/local/bin/vpn-rdp-audio \
     && printf '%s\n' 'allowed_users=anybody' 'needs_root_rights=no' > /etc/X11/Xwrapper.config
 
 EXPOSE 3389 2022

@@ -83,6 +83,7 @@ apply_defaults() {
   : "${CONTAINER_MAC:=}"
   : "${NETWORK_NAME:=}"
   : "${RDP_ACCESS_MODE:=direct}"
+  : "${RDP_SPLIT_AUDIO:=0}"
   : "${CONTAINER_FIREWALL:=1}"
 
   # SSH

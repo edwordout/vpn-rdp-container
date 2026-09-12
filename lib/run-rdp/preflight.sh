@@ -29,6 +29,10 @@ validate_config() {
     direct|ssh-tunnel) ;;
     *) fail "RDP_ACCESS_MODE must be direct or ssh-tunnel, got: $RDP_ACCESS_MODE" ;;
   esac
+  case "$RDP_SPLIT_AUDIO" in
+    0|1) ;;
+    *) fail "RDP_SPLIT_AUDIO must be 0 or 1, got: $RDP_SPLIT_AUDIO" ;;
+  esac
 
   require_numeric_config SSH_PORT
   [ "$SSH_PORT" -ge 1 ] && [ "$SSH_PORT" -le 65535 ] || fail "SSH_PORT must be between 1 and 65535, got: $SSH_PORT"

@@ -1,7 +1,8 @@
 prepare_ssh_tunnel() {
   [ "$RDP_ACCESS_MODE" = ssh-tunnel ] || return 0
 
-  local host_user host_uid host_gid host_home ssh_public_key restricted_key_line
+  local host_user host_uid host_gid host_home
+  local ssh_public_key ssh_key_type ssh_key_blob forced_command restricted_key_line authorized_keys_tmp
   host_user="$(host_user_name)"
   host_uid="$(host_user_field "$host_user" 3)"
   host_gid="$(host_user_field "$host_user" 4)"
@@ -42,18 +43,41 @@ prepare_ssh_tunnel() {
 
   ssh_public_key="$(awk 'NF && $1 !~ /^#/ {print; exit}' "$SSH_PUBLIC_KEY_FILE" | tr -d '\r\n')"
   [ -n "$ssh_public_key" ] || fail "SSH public key is empty: $SSH_PUBLIC_KEY_FILE"
-  restricted_key_line="restrict,port-forwarding,permitopen=\"127.0.0.1:3389\" $ssh_public_key"
+  ssh_key_type="$(printf '%s\n' "$ssh_public_key" | awk '{print $1}')"
+  ssh_key_blob="$(printf '%s\n' "$ssh_public_key" | awk '{print $2}')"
+  [ -n "$ssh_key_type" ] && [ -n "$ssh_key_blob" ] \
+    || fail "SSH public key is invalid: $SSH_PUBLIC_KEY_FILE"
+  if [ "$RDP_SPLIT_AUDIO" = 1 ]; then
+    forced_command="/usr/local/bin/vpn-rdp-audio"
+  else
+    forced_command="/usr/bin/false"
+  fi
+  restricted_key_line="command=\"$forced_command\",restrict,port-forwarding,permitopen=\"127.0.0.1:3389\" $ssh_public_key"
 
   mkdir -p "$CLIENT_DIR/.ssh"
   touch "$CLIENT_DIR/.ssh/authorized_keys"
   chmod 700 "$CLIENT_DIR/.ssh"
   chmod 600 "$CLIENT_DIR/.ssh/authorized_keys"
-  if ! grep -Fxq "$restricted_key_line" "$CLIENT_DIR/.ssh/authorized_keys"; then
-    printf '%s\n' "$restricted_key_line" >> "$CLIENT_DIR/.ssh/authorized_keys"
-    echo "Added restricted SSH tunnel key to $CLIENT_DIR/.ssh/authorized_keys"
-  else
-    echo "Restricted SSH tunnel key already present in $CLIENT_DIR/.ssh/authorized_keys"
-  fi
+  authorized_keys_tmp="$(mktemp "$CLIENT_DIR/.ssh/authorized_keys.XXXXXX")"
+  awk -v key_type="$ssh_key_type" -v key_blob="$ssh_key_blob" '
+    {
+      remove = 0
+      for (field = 1; field < NF; field++) {
+        if ($field == key_type && $(field + 1) == key_blob) {
+          remove = 1
+          break
+        }
+      }
+      if (!remove) {
+        print
+      }
+    }
+  ' "$CLIENT_DIR/.ssh/authorized_keys" > "$authorized_keys_tmp"
+  printf '%s\n' "$restricted_key_line" >> "$authorized_keys_tmp"
+  chmod 600 "$authorized_keys_tmp"
+  chown "$CONTAINER_USER_UID:$CONTAINER_USER_GID" "$authorized_keys_tmp"
+  mv -f "$authorized_keys_tmp" "$CLIENT_DIR/.ssh/authorized_keys"
+  echo "Updated restricted SSH tunnel key in $CLIENT_DIR/.ssh/authorized_keys"
   chown -R "$CONTAINER_USER_UID:$CONTAINER_USER_GID" "$CLIENT_DIR/.ssh"
 
   SSH_HOST_KEYS_DIR="$(expand_host_path "$SSH_HOST_KEYS_DIR" "$host_home")"

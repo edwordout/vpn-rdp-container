@@ -29,7 +29,7 @@ The included VPN launcher uses OpenConnect. Set `VPN_PROTOCOL` in `user_home_vol
 
 - Linux host with systemd
 - rootful Podman with netavark DHCP support
-- `iproute2`, `modprobe`, `ssh-keygen`, and an SSH client for tunnel mode
+- `iproute2`, `modprobe`, `ssh-keygen`, and an SSH client for tunnel mode; `RDP_SPLIT_AUDIO=1` also requires host `pw-play`
 - a physical LAN interface that can be used as the macvlan parent
 - an RDP client on the host or another LAN machine
 
@@ -86,19 +86,35 @@ cd ~
 
 ## Access modes
 
-`RDP_ACCESS_MODE=direct` is the default. XRDP listens on the container LAN IP, and the container firewall allows inbound `3389/tcp`.
+`RDP_ACCESS_MODE=direct` is the default. XRDP listens on the container LAN IP, the container firewall allows inbound `3389/tcp`, and audio uses ordinary XRDP sound redirection.
 
-`RDP_ACCESS_MODE=ssh-tunnel` exposes only SSH on `SSH_PORT` (`2022` by default). XRDP listens on `127.0.0.1:3389` inside the container. On each run in tunnel mode, `run-rdp-container.sh` creates an Ed25519 client key under the sudo-invoking user's `~/.ssh` if needed, creates persistent container SSH host keys under ignored `ssh_host_keys/`, appends the restricted client public key to `user_home_volume/.ssh/authorized_keys` without duplicating it, creates/updates a managed SSH config entry at `~/.ssh/config.d/vpn-rdp-container`, configures SSH to forward RDP without opening a remote shell, and ensures `~/.ssh/config` includes `~/.ssh/config.d/*`. Re-run the script after the container DHCP IP changes; the managed `HostName` is overwritten with the current address.
+`RDP_SPLIT_AUDIO=0` is the default and is ignored in direct mode. Set it to `1` to carry SSH-tunnel-mode audio over a second, non-multiplexed SSH connection, then rerun `run-rdp-container.sh` to update the managed SSH authorization.
 
-Tunnel mode connection flow:
+See [Split RDP audio over SSH](docs/split-rdp-audio.md) for a concise overview of the separate `pw-play` transport and its lifecycle.
+
+`RDP_ACCESS_MODE=ssh-tunnel` exposes only SSH on `SSH_PORT` (`2022` by default). XRDP listens on `127.0.0.1:3389` inside the container. On each run in tunnel mode, `run-rdp-container.sh` creates an Ed25519 client key under the sudo-invoking user's `~/.ssh` if needed, creates persistent container SSH host keys under ignored `ssh_host_keys/`, installs one managed authorization in `user_home_volume/.ssh/authorized_keys`, creates or updates `~/.ssh/config.d/vpn-rdp-container`, and ensures `~/.ssh/config` includes `~/.ssh/config.d/*`. The authorization always permits the RDP port forward and denies arbitrary remote commands and subsystems. With `RDP_SPLIT_AUDIO=1`, it also permits the forced split-audio command. Re-run the script after the container DHCP IP changes; the managed `HostName` is overwritten with the current address.
+
+With `RDP_SPLIT_AUDIO=1`, RustConn can start the RDP and split audio together without an external terminal:
+
+1. Create a **Generic Command** companion whose command is `/absolute/path/to/vpn-rdp-container/run-rdp-audio.sh companion`.
+2. Put that companion and the real RDP connection in one group.
+3. Use **Connect All** to start them and **Disconnect All** to stop them.
+
+RustConn 0.21.10 does not run post-disconnect tasks for external RDP sessions. Closing only the external RDP window therefore does not stop the companion; use **Disconnect All** for deterministic cleanup. The companion waits for the initial `127.0.0.1:3389` connection but does not monitor RDP after startup.
+
+With `RDP_SPLIT_AUDIO=1` and without RustConn, use the foreground flow:
 
 ```bash
+# 1. Establish the background RDP forward.
 ssh -f vpn-rdp-container
+
+# 2. Connect the outer RDP client to localhost:3389 and wait for the desktop.
+
+# 3. From this repository on the host, start split audio.
+./run-rdp-audio.sh
 ```
 
-Then connect your RDP client to `localhost:3389`.
-
-When finished, stop the background tunnel:
+Press Ctrl-C in the audio terminal before stopping the background RDP tunnel:
 
 ```bash
 ssh -O exit vpn-rdp-container
@@ -195,7 +211,11 @@ The image also installs a lightweight RDP audio profile under `/etc/pipewire/`:
 - default quantum `2048`
 - Pulse clients prefer/fixate `S16LE` stereo at `44100`
 
-After reconnecting KRDC, test inside the container desktop:
+Direct access and SSH tunnel mode with `RDP_SPLIT_AUDIO=0` carry sound through ordinary XRDP redirection. With `RDP_ACCESS_MODE=ssh-tunnel` and `RDP_SPLIT_AUDIO=1`, changing graphics and XRDP sound no longer share one ordered RDP/SSH stream. After the outer XRDP desktop is connected, `./run-rdp-audio.sh` creates `ssh_audio`, moves current playback to it, watches for new playback streams from inner-RDP reconnects, and carries its 44.1-kHz stereo PCM monitor over a second, non-multiplexed SSH/TCP connection to host `pw-play`. When `RDP_MUTE_INPUTS=1`, `rdp.sh` mutes capture devices but deliberately leaves monitor sources such as `ssh_audio.monitor` unmuted.
+
+When split audio is enabled, the launcher with no argument stays in the foreground and Ctrl-C closes its SSH connection. Its `companion` mode is a foreground Generic Command owned by RustConn; it does not watch the outer RDP connection. Use the group's **Disconnect All** action to terminate both the RDP and companion. Both termination paths restore the sink active before launch, move current playback back, and unload only the temporary sink.
+
+Test inside the container desktop:
 
 ```bash
 pactl info
@@ -203,8 +223,7 @@ pactl list short sinks
 paplay /usr/share/sounds/alsa/Front_Center.wav
 ```
 
-Your RDP client must have sound redirection enabled.
-
+Your RDP client must have sound redirection enabled when using ordinary XRDP audio. Split audio requires SSH tunnel mode, `RDP_SPLIT_AUDIO=1`, and host `pw-play`.
 
 For audio diagnostics inside the desktop:
 
@@ -215,8 +234,6 @@ paplay /usr/share/sounds/alsa/Front_Center.wav
 # or
 speaker-test -D pipewire -t sine -f 440 -l 1
 ```
-
-
 
 ### Clipboard testing
 

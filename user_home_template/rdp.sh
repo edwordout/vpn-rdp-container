@@ -80,6 +80,9 @@ ensure_pulse_source() {
 
 mute_audio_inputs() {
   pactl list short sources 2>/dev/null | awk '{print $2}' | while read -r source_name; do
+    case "$source_name" in
+      *.monitor) continue ;;
+    esac
     pactl set-source-mute "$source_name" 1 >/dev/null 2>&1 || true
   done
 }
